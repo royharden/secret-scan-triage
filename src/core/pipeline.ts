@@ -55,6 +55,8 @@ export interface PipelineStats {
 
 export interface PipelineOutput {
   findings: Finding[];
+  /** Numeric provenance aligned with findings, for worker/Node-only label joins before raw candidates are released. */
+  sourceRecordIndices: number[];
   guard: LeakGuard;
   missingFields: Record<string, number>;
   stats: PipelineStats;
@@ -241,6 +243,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
 
   // 5. Identity and metadata sanitising; build masked findings.
   const findings: Finding[] = [];
+  const sourceRecordIndices: number[] = [];
   const digestChecks = new Map<string, boolean>();
   const digestBlocked = (digest: string): boolean => {
     const cached = digestChecks.get(digest);
@@ -300,6 +303,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
     if (fp !== undefined) f.fingerprint = fp;
     if (c.scannerEntropy !== undefined) f.scannerEntropy = c.scannerEntropy;
     findings.push(f);
+    sourceRecordIndices.push(c.recordIndex);
   }
 
   // 6. Drop raw references held by this call (GC cannot promise zeroisation; this only releases references).
@@ -309,5 +313,5 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
   rawWindows.length = 0;
   pending.length = 0;
 
-  return { findings, guard, missingFields: parsed.missingFields, stats };
+  return { findings, sourceRecordIndices, guard, missingFields: parsed.missingFields, stats };
 }

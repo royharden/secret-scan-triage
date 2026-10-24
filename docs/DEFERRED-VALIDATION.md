@@ -1,5 +1,10 @@
 # Deferred validation
 
+M4 review repair adds unexecuted regression source for exact freeze identity, live dev-threshold lineage, charged safety/cache
+failures, unknown accounting, comparator boundaries and rendered judge/config provenance. After Dirty Mode closes, run
+`npx vitest run tests/evalkit/study.test.ts tests/evalkit/runnerCache.test.ts tests/evalkit/report.test.ts`; inspect a permitted live
+run's threshold artifact before held-out dispatch. No statistical, accounting, CLI, type or runtime result is claimed by this repair.
+
 Single ledger of everything built in Dirty Mode construction that has **not** been executed or verified (PLAN §6: Claude §6
 D1-D16 plus Codex rows, new D17-D18). Nothing here has run. Each row names the exact later command or steps. Commands assume the
 inner repo root as the working directory, Node 24 and npm, at activation after Dirty Mode closes. Update a row (do not delete it)
@@ -36,3 +41,5 @@ parsing is not evidence these assertions pass. D3/D10/D20 remain deferred; after
 `npx vitest run tests/core/signals.test.ts tests/core/judge.test.ts` for the signal/policy and model-text regressions.
 
 | D23 | M3 journey/rulings/audit/exports | IndexedDB transaction completion/quota, persistent cohorts, binding replay/reversal, focus and browser downloads unexecuted | Dirty Mode source only | After D2: `npx vitest run tests/rulings tests/audit tests/exports tests/app/journey.test.ts`; browser: approve/real/skip with notes and J/K/R/D/S, reload/reimport, run2 changes return to review, inspect IDB for sanitized events/cohorts but no guard/raw, export all four formats and verify ignore only approved/current/gitleaks; quota must report unsaved. Folder picker top-level/iframe fallback: select files then import, verify 1MB/50MB budgets and skipped notice. |
+
+| D24 | M4 scorer, statistics, lineage | Pure statistics/methods/cache/CLI/renderers are source only; no actual manifest/counts/threshold tuning/results produced | Dirty Mode prohibits execution | After D2: `npx vitest run tests/evalkit`; `npm run eval -- --freeze`; `npm run eval`; inspect rows/undefined cases/mock provenance and cache; after explicit keys/spend authorization: `npm run eval -- --live --tune`, once on frozen heldout; compare hand-computed Wilson/bootstrap fixtures and verify README/LIMITATIONS/results match one object. Repeats must be exploratory. |

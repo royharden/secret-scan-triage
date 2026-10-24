@@ -3,7 +3,7 @@
 A local review workspace for gitleaks JSON arrays and trufflehog JSON-lines reports. Raw report contents are read in a worker;
 the page receives guarded masked findings and a session-only hashed leak index. Human decisions and downloads are dry runs.
 
-This repository currently contains **M1 through M3 source only**: normalisation/masking/signals/policy, a seeded synthetic generator,
+This repository currently contains **M1 through M4 source only**: normalisation/masking/signals/policy, a seeded synthetic generator,
 a clearly labelled scripted mock judge, file/demo import, keep/review/collapsed suggested-dismissal bands, append-only local
 approve/mark-real/skip rulings, binding-checked replay, a seeded dismissal audit, keyboard controls and guarded JSON/CSV/Markdown/ignore downloads. The worker is terminated after its result; the page rebuilds
 its guard from numeric hash data to check state and exports. A blocked finding is omitted and counted for local review.
@@ -32,4 +32,8 @@ command has been executed during construction.
 
 Optional folder context is read in the same worker pass, with a directory-input fallback for preview iframes. A run-2 demo tests changed context and equal-mask value replacement. Changing a decision appends an event; it does not overwrite history. Quota/transaction failures never claim a save.
 
-Later milestones add an honest scorer and live provider/backend source. They are not represented as built here. Nothing changes scanner reports, source files or credentials.
+The scorer source includes six comparators, paired group-bootstrap intervals, dev tuning, matched-recall sweeps, cache provenance and evaluation-only ablations. It has never run. `npm run eval -- --freeze` later freezes a generated manifest; `npm run eval` is scripted interface replay. Live source integration is the next milestone. They are not represented as built here. Nothing changes scanner reports, source files or credentials.
+
+<!-- CLAIM:BEGIN -->
+Not yet measured. Scripted-mock output is interface replay, not model performance. No real-world generalisation is established.
+<!-- CLAIM:END -->

@@ -18,7 +18,22 @@ export class ThresholdsError extends Error {
 }
 
 const KNOWN_KEYS = new Set(['source', 'judge_dismiss_enabled', 't_dismiss', 't_keep', 'target_recall', 'infeasible', 'counts',
-  'tuned_at', 'note']);
+  'tuned_at', 'note', 'lineage']);
+const LINEAGE_KEYS = new Set(['version', 'origin', 'method', 'studyHash', 'devPopulationHash', 'devCount', 'devReal',
+  'operatingHash', 'thresholdHash']);
+
+/** Approved metadata shape only. The study layer additionally verifies every hash/count against the frozen run. */
+function validLineage(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const lineage = value as Record<string, unknown>;
+  if (Object.keys(lineage).some(key => !LINEAGE_KEYS.has(key))
+    || lineage.version !== 1 || lineage.origin !== 'live' || lineage.method !== 'generative') return false;
+  if (!['studyHash', 'devPopulationHash', 'operatingHash', 'thresholdHash'].every(key =>
+    typeof lineage[key] === 'string' && /^[0-9a-f]{64}$/.test(lineage[key] as string))) return false;
+  return Number.isSafeInteger(lineage.devCount) && (lineage.devCount as number) > 0
+    && Number.isSafeInteger(lineage.devReal) && (lineage.devReal as number) >= 0
+    && (lineage.devReal as number) <= (lineage.devCount as number);
+}
 
 function finite(x: unknown): x is number {
   return typeof x === 'number' && Number.isFinite(x);
@@ -31,6 +46,9 @@ export function loadThresholds(json: unknown): Thresholds {
   for (const k of Object.keys(j)) if (!KNOWN_KEYS.has(k)) throw new ThresholdsError(`thresholds: unknown key ${k}`);
   if (j.source !== 'untuned-default' && j.source !== 'dev-tuned') {
     throw new ThresholdsError('thresholds: source must be "untuned-default" or "dev-tuned"');
+  }
+  if (j.lineage !== undefined && (j.source !== 'dev-tuned' || !validLineage(j.lineage))) {
+    throw new ThresholdsError('thresholds: invalid live dev-tuning lineage metadata');
   }
   if (typeof j.judge_dismiss_enabled !== 'boolean') throw new ThresholdsError('thresholds: judge_dismiss_enabled must be a boolean');
   if (!finite(j.t_dismiss) || !finite(j.t_keep)) throw new ThresholdsError('thresholds: t_dismiss and t_keep must be finite numbers');

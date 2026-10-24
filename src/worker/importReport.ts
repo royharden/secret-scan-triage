@@ -2,6 +2,7 @@
 import { checkSize, detectFormat, ImportError } from '../core/ingest/index.ts';
 import type { ReportFormat } from '../core/ingest/index.ts';
 import { runPipeline, pipelineConfig } from '../core/pipeline.ts';
+import { normalizeReportPath } from '../core/context/pathMatch.ts';
 import { generateSynthetic } from '../core/synth/index.ts';
 import { createMockJudge } from '../core/providers/mock.ts';
 import { buildMaskedView } from '../core/judge/views.ts';
@@ -44,9 +45,10 @@ export async function processImport(request: ImportRequest): Promise<ImportCompl
   let text: string;
   let files: Record<string, string> | undefined;
   let format: ReportFormat;
+  let contextSkipped = 0;
   if (request.kind === 'demo') {
     if (request.format !== 'gitleaks' && request.format !== 'trufflehog') throw new ImportError('unsupported');
-    const demo = generateSynthetic({ seed: DEMO_SEED });
+    const demo = generateSynthetic({ seed: DEMO_SEED, variant: request.variant ?? 'run1' });
     text = request.format === 'gitleaks' ? demo.gitleaksJson : demo.trufflehogNdjson;
     files = demo.files;
     format = request.format;
@@ -55,6 +57,19 @@ export async function processImport(request: ImportRequest): Promise<ImportCompl
     // This check MUST precede File.text(). The page sends the File object, never its contents.
     checkSize(request.file.size);
     text = await request.file.text();
+    if (request.selectedFiles) {
+      if (request.selectedFiles.length > 20_000) throw new Error('');
+      files = Object.create(null) as Record<string, string>;
+      let total = 0;
+      for (const selected of request.selectedFiles) {
+        const path = normalizeReportPath(selected.path);
+        if (!path || selected.file.size > 1_000_000 || total + selected.file.size > 50_000_000 || Object.hasOwn(files, path)) {
+          contextSkipped++; continue;
+        }
+        total += selected.file.size;
+        files[path] = await selected.file.text(); // Only explicitly selected File objects; report paths never open files.
+      }
+    }
     if (request.format === 'auto') {
       const detected = detectFormat(text);
       if (detected === 'ambiguous' || detected === 'unsupported') throw new ImportError(detected);
@@ -65,6 +80,7 @@ export async function processImport(request: ImportRequest): Promise<ImportCompl
 
   const output = await runPipeline({
     text, format, files, projectSalt: request.projectSalt,
+    radius: request.kind === 'file' ? request.radius : 3,
     verificationEnabled: request.kind === 'file' && request.verificationEnabled,
   });
   text = ''; files = undefined; // Release this scope's references; no claim of memory zeroisation.
@@ -93,6 +109,6 @@ export async function processImport(request: ImportRequest): Promise<ImportCompl
   const snapshot = snapshotGuard(output.guard, config.prefixes);
   return {
     kind: 'complete', rows, snapshot, blocked,
-    candidates: output.stats.candidates, format, demo: request.kind === 'demo',
+    candidates: output.stats.candidates, format, demo: request.kind === 'demo', contextSkipped,
   };
 }

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { Band } from '../../core/finding.ts';
 import type { HumanDecision, QueueItem, Session } from '../session.ts';
-import { bandCounts } from '../session.ts';
+import { currentNote, guardedNoteDraft, keyboardAction, queueOrder, renderedQueueItems, restoreQueueFocus, saveQueueDecision, visibleBand } from '../keyboard.ts';
+import type { NoteDraft } from '../keyboard.ts';
 
 interface Props {
   session: Session;
-  onDecision: (position: number, decision: HumanDecision) => void;
-  onExport: () => void;
+  saving: boolean;
+  checkNote: (note: string) => boolean;
+  onDecision: (position: number, decision: HumanDecision, note?: string) => Promise<void>;
+  onExport: (format: 'json' | 'csv' | 'markdown' | 'ignore') => void;
   onClear: () => void;
 }
 const humanLabels: Record<HumanDecision, string> = {
@@ -18,11 +21,17 @@ const bandCopy: Record<Band, { title: string; hint: string }> = {
   dismiss: { title: 'Suggested dismissals', hint: 'Suggestions stay pending until you approve them.' },
 };
 
-function FindingCard({ item, onDecision }: { item: QueueItem; onDecision: Props['onDecision'] }) {
+interface CardActions {
+  onDecision: (position: number, decision: HumanDecision) => void;
+  noteFor: (item: QueueItem) => NoteDraft;
+  onNote: (position: number, note: string) => void;
+}
+function FindingCard({ item, onDecision, saving, noteFor, onNote }: { item: QueueItem; saving: boolean } & CardActions) {
+  const { note, blocked: noteBlocked } = noteFor(item);
   const f = item.finding;
   const titleId = `finding-${item.position}`;
   return (
-    <article className={`finding-card ${item.human !== 'pending' ? 'decided' : ''}`} aria-labelledby={titleId}>
+    <article id={`row-${item.position}`} data-position={item.position} tabIndex={0} className={`finding-card ${item.human !== 'pending' ? 'decided' : ''}`} aria-labelledby={titleId}>
       <div className="finding-topline"><span className="scanner-label">{f.scanner}</span><span className={`verification ${f.verified === 'verified' ? 'verified' : ''}`}>{f.verifiedLabel}</span><span className="human-status">{humanLabels[item.human]}</span></div>
       <h4 id={titleId}><code>{f.ruleId}</code></h4>
       <p className="finding-path"><code>{f.path || '(path unavailable)'}</code><span>line {f.line}</span></p>
@@ -37,37 +46,77 @@ function FindingCard({ item, onDecision }: { item: QueueItem; onDecision: Props[
         {f.maskedWindow.length > 0 ? <pre>{f.maskedWindow.map((line) => <span key={line.lineId}><b>{line.lineId}</b> {line.text}{'\n'}</span>)}</pre> : <p>Context unavailable or withheld.</p>}
         {f.signals.length > 0 ? <ul>{f.signals.map((signal, i) => <li key={`${signal.id}-${i}`}><strong>{signal.id}</strong> {signal.name} · {signal.direction} / {signal.strength} · {signal.evidence.lineId}{typeof signal.evidence.start === 'number' && typeof signal.evidence.end === 'number' ? ` [${signal.evidence.start}, ${signal.evidence.end})` : ''}</li>)}</ul> : <p>No deterministic signals on this span.</p>}
       </details>
+      {item.replayReason && <p className="flag">Saved decision invalidated: {item.replayReason.replaceAll('_', ' ')}. Review the changed finding.</p>}
+      <label className="note-label" htmlFor={`note-${item.position}`}>Optional note (500 characters maximum)</label>
+      <textarea id={`note-${item.position}`} value={note} maxLength={500} disabled={saving} onChange={event => onNote(item.position, event.target.value)} rows={2} />
+      {noteBlocked && <p role="alert">The note was withheld by the leak guard. Use a note without credential material.</p>}
       <div className="finding-actions" aria-label={`Decision for finding ${item.position + 1}`}>
-        <button className="action-real" aria-pressed={item.human === 'real'} onClick={() => onDecision(item.position, 'real')}>Mark real</button>
-        <button aria-pressed={item.human === 'approved_dismissal'} onClick={() => onDecision(item.position, 'approved_dismissal')}>Approve dismissal</button>
-        <button className="text-button" aria-pressed={item.human === 'skipped'} onClick={() => onDecision(item.position, 'skipped')}>Skip</button>
+        <button className="action-real" aria-pressed={item.human === 'real'} disabled={saving} onClick={() => onDecision(item.position, 'real')}>Mark real</button>
+        <button aria-pressed={item.human === 'approved_dismissal'} disabled={saving} onClick={() => onDecision(item.position, 'approved_dismissal')}>Approve dismissal</button>
+        <button className="text-button" aria-pressed={item.human === 'skipped'} disabled={saving} onClick={() => onDecision(item.position, 'skipped')}>Skip</button>
       </div>
     </article>
   );
 }
 
-function BandList({ band, items, onDecision }: { band: Band; items: QueueItem[]; onDecision: Props['onDecision'] }) {
+function BandList({ band, items, selected, onDecision, saving, noteFor, onNote }: { band: Band; items: QueueItem[]; selected: number; saving: boolean } & CardActions) {
   const [visible, setVisible] = useState(30);
+  const shown = renderedQueueItems(items, visible, selected);
   return <>
-    {items.length === 0 ? <p className="band-empty">No findings in this band.</p> : <div className="finding-list">{items.slice(0, visible).map((item) => <FindingCard key={item.position} item={item} onDecision={onDecision} />)}</div>}
-    {items.length > visible && <button className="secondary show-more" onClick={() => setVisible((n) => n + 30)}>Show 30 more {bandCopy[band].title.toLowerCase()} findings ({items.length - visible} remaining)</button>}
+    {items.length === 0 ? <p className="band-empty">No findings in this band.</p> : <div className="finding-list">{shown.map((item) => <FindingCard key={item.position} item={item} onDecision={onDecision} saving={saving} noteFor={noteFor} onNote={onNote} />)}</div>}
+    {items.length > shown.length && <button className="secondary show-more" onClick={() => setVisible((n) => n + 30)}>Show 30 more {bandCopy[band].title.toLowerCase()} findings ({items.length - shown.length} remaining)</button>}
   </>;
 }
 
-export function Queue({ session, onDecision, onExport, onClear }: Props) {
-  const counts = bandCounts(session);
+export function Queue({ session, saving, checkNote, onDecision, onExport, onClear }: Props) {
+  const ordered = queueOrder(session);
+  const [selected, setSelected] = useState(ordered[0]?.position ?? 0);
+  const [notes, setNotes] = useState<Map<number, NoteDraft>>(() => new Map());
+  const [focusRequest, setFocusRequest] = useState<{ position: number; sequence: number } | null>(null);
+  const focusSequence = useRef(0);
+  const requestFocus = (position: number) => setFocusRequest({ position, sequence: ++focusSequence.current });
+  useLayoutEffect(() => {
+    if (focusRequest && !saving) restoreQueueFocus(focusRequest.position, position => document.getElementById(`row-${position}`));
+  }, [focusRequest, saving, session]);
+  const onNote = (position: number, note: string) => {
+    const draft = guardedNoteDraft(note, checkNote); // Never retain unchecked input in state.
+    setNotes(current => new Map(current).set(position, draft));
+  };
+  const submit = async (position: number, decision: HumanDecision) => {
+    if (saving) return;
+    const item = session.items.find(row => row.position === position);
+    if (!item) return;
+    setSelected(position);
+    setFocusRequest(null);
+    try { await saveQueueDecision(item, decision, notes, onDecision, requestFocus); }
+    catch { /* App owns the guarded/fixed save-failure notice. Focus is still requested in finally. */ }
+  };
+  const actions: CardActions = { onDecision: (position, decision) => { void submit(position, decision); },
+    noteFor: item => currentNote(item, notes), onNote };
+  const counts: Record<Band, number> = { keep: 0, review: 0, dismiss: 0 };
+  for (const item of session.items) counts[visibleBand(item, session)]++;
   const decided = session.items.filter((item) => item.human !== 'pending').length;
   return (
-    <section className="queue-panel" aria-labelledby="queue-heading">
-      <div className="section-heading queue-heading"><div><span className="eyebrow">02 / Review the evidence</span><h2 id="queue-heading">Your triage queue</h2><p>{session.demo ? 'Synthetic demo' : 'Imported report'} · {session.format} · {session.candidates} findings · {decided} human decisions</p></div><div className="queue-tools"><button className="primary" onClick={onExport}>Download masked JSON <span aria-hidden="true">↓</span></button><button className="text-button" onClick={onClear}>Clear session</button></div></div>
-      <div className="session-notice" role="status">Worker terminated after parsing; raw references released. Memory disposal has not been measured. Decisions last until you clear, re-import or reload.</div>
+    <section className="queue-panel" aria-labelledby="queue-heading" onKeyDown={event => {
+      const target = event.target as HTMLElement;
+      if (saving || target.closest('input,textarea,select,[contenteditable=true]') || event.altKey || event.ctrlKey || event.metaKey) return;
+      const position = Number(target.closest('[data-position]')?.getAttribute('data-position') ?? selected);
+      const action = keyboardAction(event.key.toLowerCase(), position, ordered.filter(item => document.getElementById(`row-${item.position}`)).map(item => item.position));
+      if (!action) return;
+      event.preventDefault(); setSelected(action.position);
+      if (action.decision) void submit(action.position, action.decision);
+      else requestFocus(action.position);
+    }}>
+      <div className="section-heading queue-heading"><div><span className="eyebrow">02 / Review the evidence</span><h2 id="queue-heading">Your triage queue</h2><p>{session.demo ? 'Synthetic demo' : 'Imported report'} · {session.format} · {session.candidates} findings · {decided} human decisions</p></div><div className="queue-tools"><button className="primary" onClick={() => onExport('json')}>JSON ↓</button><button onClick={() => onExport('csv')}>CSV</button><button onClick={() => onExport('markdown')}>Markdown</button><button onClick={() => onExport('ignore')}>Ignore proposal</button><button className="text-button" onClick={onClear}>Clear session</button></div></div>
+      <div className="session-notice" role="status">Worker terminated after parsing; raw references released. Memory disposal has not been measured. Saved decisions replay only when finding id, masked content and keyed value tag all match. Re-import after reload to restore the guard.</div>
       {session.blocked > 0 && <div className="blocked-notice" role="status"><strong>{session.blocked} findings withheld for review.</strong> The guard blocked their material. They are excluded from the visible queue and export; review the original report locally. No dismissal was recorded for them.</div>}
-      <div className="band-counts" aria-label="Automated bands">
-        {(['keep', 'review', 'dismiss'] as const).map((band) => <a className={`count-card ${band}`} href={`#band-${band}`} key={band}><span>{bandCopy[band].title}</span><strong>{counts[band]}</strong><small>{band === 'review' && session.blocked ? `+ ${session.blocked} withheld` : band === 'dismiss' ? 'Human approval required' : 'Automated band'}</small></a>)}
+      <p className="field-hint">Keyboard: J/K next/previous, R mark real, D approve dismissal, S skip. Changing a saved decision appends a new event. Notes are checked before saving.</p>
+      <div className="band-counts" aria-label="Queue bands">
+        {(['keep', 'review', 'dismiss'] as const).map((band) => <a className={`count-card ${band}`} href={`#band-${band}`} key={band}><span>{bandCopy[band].title}</span><strong>{counts[band]}</strong><small>{band === 'review' && session.blocked ? `+ ${session.blocked} withheld` : band === 'dismiss' ? 'Human approval required' : 'Queue placement'}</small></a>)}
       </div>
       {session.candidates === 0 && <p className="empty-report">The report parsed successfully and contains no findings.</p>}
-      {(['keep', 'review'] as const).map((band) => <section id={`band-${band}`} className={`band band-${band}`} key={band} aria-labelledby={`heading-${band}`}><div className="band-heading"><h3 id={`heading-${band}`}>{bandCopy[band].title} <span>{counts[band]}</span></h3><p>{bandCopy[band].hint}</p></div><BandList band={band} items={session.items.filter((item) => item.decision.band === band)} onDecision={onDecision} /></section>)}
-      <details id="band-dismiss" className="band band-dismiss dismiss-band"><summary><span>Suggested dismissals <b>{counts.dismiss}</b></span><small>{bandCopy.dismiss.hint}</small></summary><BandList band="dismiss" items={session.items.filter((item) => item.decision.band === 'dismiss')} onDecision={onDecision} /></details>
+      {(['keep', 'review'] as const).map((band) => <section id={`band-${band}`} className={`band band-${band}`} key={band} aria-labelledby={`heading-${band}`}><div className="band-heading"><h3 id={`heading-${band}`}>{bandCopy[band].title} <span>{counts[band]}</span></h3><p>{bandCopy[band].hint}</p></div><BandList band={band} items={ordered.filter((item) => visibleBand(item, session) === band)} selected={selected} saving={saving} {...actions} /></section>)}
+      <details id="band-dismiss" className="band band-dismiss dismiss-band"><summary><span>Suggested dismissals <b>{counts.dismiss}</b></span><small>{bandCopy.dismiss.hint}</small></summary><BandList band="dismiss" items={ordered.filter((item) => visibleBand(item, session) === 'dismiss')} selected={selected} saving={saving} {...actions} /></details>
       <p className="privacy-footnote">Automated bands remain separate from your decisions. This is a dry run: no files are changed and no scanner ignore file is written.</p>
     </section>
   );

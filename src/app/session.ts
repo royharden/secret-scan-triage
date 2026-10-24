@@ -1,5 +1,7 @@
 // Session data is memory-only. M3 will add append-only persisted rulings with full binding semantics.
 import type { Band, Finding } from '../core/finding.ts';
+import type { AuditCohort } from '../core/audit/sampler.ts';
+import type { OwnerProject, RulingBinding, RulingEvent } from '../core/rulings/types.ts';
 import type { JudgeResult } from '../core/judge/contract.ts';
 import type { Decision } from '../core/policy/decide.ts';
 import type { LeakGuard } from '../core/safe.ts';
@@ -12,6 +14,9 @@ export interface QueueItem {
   decision: Decision;
   judge: JudgeResult | null;
   human: HumanDecision;
+  binding?: RulingBinding;
+  ruling?: RulingEvent;
+  replayReason?: string;
 }
 export interface Session {
   items: QueueItem[];
@@ -19,6 +24,10 @@ export interface Session {
   candidates: number;
   format: 'gitleaks' | 'trufflehog';
   demo: boolean;
+  runId?: string;
+  scope?: OwnerProject;
+  cohort?: AuditCohort;
+  events?: RulingEvent[];
 }
 
 function record(v: unknown): v is Record<string, unknown> {

@@ -18,7 +18,7 @@ export function exportMaskedJson(rows: readonly unknown[], guard: LeakGuard, pre
     source: 'scripted-mock',
     thresholds: 'untuned-default',
     dryRun: true,
-    rulingsPersistence: 'memory-only',
+    rulingsPersistence: 'indexeddb-append-only',
     blockedForReview: blocked,
     findings,
   }, 'export', guard);

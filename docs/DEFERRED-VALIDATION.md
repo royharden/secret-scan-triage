@@ -34,3 +34,5 @@ M1 review repair added unexecuted regressions for strict constructed/genuine-HMA
 JSON-escaped strings), bounded span exhaustion through policy, PEM block binding and the final escaped model-text cap. Source
 parsing is not evidence these assertions pass. D3/D10/D20 remain deferred; after Dirty Mode closes also run
 `npx vitest run tests/core/signals.test.ts tests/core/judge.test.ts` for the signal/policy and model-text regressions.
+
+| D23 | M3 journey/rulings/audit/exports | IndexedDB transaction completion/quota, persistent cohorts, binding replay/reversal, focus and browser downloads unexecuted | Dirty Mode source only | After D2: `npx vitest run tests/rulings tests/audit tests/exports tests/app/journey.test.ts`; browser: approve/real/skip with notes and J/K/R/D/S, reload/reimport, run2 changes return to review, inspect IDB for sanitized events/cohorts but no guard/raw, export all four formats and verify ignore only approved/current/gitleaks; quota must report unsaved. Folder picker top-level/iframe fallback: select files then import, verify 1MB/50MB budgets and skipped notice. |

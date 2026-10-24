@@ -3,7 +3,7 @@
 A local review workspace for gitleaks JSON arrays and trufflehog JSON-lines reports. Raw report contents are read in a worker;
 the page receives guarded masked findings and a session-only hashed leak index. Human decisions and downloads are dry runs.
 
-This repository currently contains **M1 through M5 source only**: normalisation/masking/signals/policy, a seeded synthetic generator,
+This repository currently contains **M1 through M6 source only**: normalisation/masking/signals/policy, a seeded synthetic generator,
 a clearly labelled scripted mock judge, file/demo import, keep/review/collapsed suggested-dismissal bands, append-only local
 approve/mark-real/skip rulings, binding-checked replay, a seeded dismissal audit, keyboard controls and guarded JSON/CSV/Markdown/ignore downloads. The worker is terminated after its result; the page rebuilds
 its guard from numeric hash data to check state and exports. A blocked finding is omitted and counted for local review.
@@ -32,10 +32,15 @@ command has been executed during construction.
 
 Optional folder context is read in the same worker pass, with a directory-input fallback for preview iframes. A run-2 demo tests changed context and equal-mask value replacement. Changing a decision appends an event; it does not overwrite history. Quota/transaction failures never claim a save.
 
-The scorer source includes six comparators, paired group-bootstrap intervals, dev tuning, matched-recall sweeps, cache provenance and evaluation-only ablations. It has never run. `npm run eval -- --freeze` later freezes a generated manifest; `npm run eval` is scripted interface replay. Live source integration now uses the same provider adapters and shared per-eval ledger, including screens and retries. Server configuration requires explicit live enablement, verified dated model prices/keys and session/user/global caps. There is no silent live-to-mock fallback. Jev is experimental/not promoted; unfit composition remains cannot_tell until trusted dev-fit parameters exist. They are not represented as built here. Nothing changes scanner reports, source files or credentials.
+The scorer source includes six comparators, paired group-bootstrap intervals, dev tuning, matched-recall sweeps, cache provenance and evaluation-only ablations. It has never run. `npm run eval -- --freeze` later freezes a generated manifest; `npm run eval` is scripted interface replay. Live source integration now uses the same provider adapters and shared per-eval ledger, including screens and retries. Server configuration requires explicit live enablement, verified dated model prices/keys and session/user/global caps. There is no silent live-to-mock fallback. Jev is experimental/not promoted; unfit composition remains cannot_tell until trusted dev-fit parameters exist. Nothing changes scanner reports, source files or credentials.
 
 <!-- CLAIM:BEGIN -->
 Not yet measured. Scripted-mock output is interface replay, not model performance. No real-world generalisation is established.
 <!-- CLAIM:END -->
 
-Connected activation is pending: three SQL migrations and JWT function `triage-judge` have never been applied/deployed. Auth redirects, RLS, atomic caps/claims, provider wire/model/prices and browser consent/privacy require later validation. No remote or publication exists. For provider configuration see the forthcoming BOLT-HANDOFF inventory and deferred ledger; real values belong only in owner-managed server settings.
+Connected activation is pending: three SQL migrations and JWT function `triage-judge` have never been applied/deployed. Auth redirects, RLS, atomic caps/claims, provider wire/model/prices and browser consent/privacy require later validation. No remote or publication exists. For provider configuration see [BOLT-HANDOFF.md](BOLT-HANDOFF.md) and deferred ledger; real values belong only in owner-managed server settings.
+
+
+M6 includes the opt-in Linux/WSL CredData metadata-manifest builder, privacy documentation and deployment inventory. No features were cut under the partial-MVP contingency. CredData data is absent; its checked-in manifest is a not-run placeholder. See [the normalized metadata contract](docs/creddata-manifest.md). The local private-identity backup in Setup requires a fresh guard and contains the identity salt; protect it separately from report exports. There is no automatic restore UI.
+
+Start with [the architecture/invariants](AGENTS.md), [privacy](docs/privacy.md), [evaluation method](docs/eval-method.md) and [activation handoff](BOLT-HANDOFF.md). The product has no remote, provisioned backend or hosting. Construction acceptance does not establish runtime readiness.

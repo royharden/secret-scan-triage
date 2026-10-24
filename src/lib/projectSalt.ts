@@ -1,4 +1,6 @@
 // Only the identity salt is persisted. The guard/snapshot and imported report never enter this database.
+import { LeakGuardError, serializeSafe } from '../core/safe.ts';
+import type { LeakGuard } from '../core/safe.ts';
 const DATABASE = 'secret-scan-triage-local';
 const STORE = 'settings';
 const KEY = 'projectSalt';
@@ -42,4 +44,11 @@ export function getProjectSalt(factory: IDBFactory = globalThis.indexedDB): Prom
       };
     };
   });
+}
+
+/** Explicit user-owned local backup only; never include this value in a model request, cloud row or report export. */
+export async function exportProjectIdentity(guard: LeakGuard, factory: IDBFactory = globalThis.indexedDB): Promise<string> {
+  if (!guard.ready) throw new LeakGuardError('export', { reason: 'not_ready' });
+  const salt = await getProjectSalt(factory);
+  return serializeSafe({ schemaVersion: 1, kind: 'private-project-identity', projectSalt: Array.from(salt) }, 'export', guard);
 }

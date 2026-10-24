@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "status": "not-run",
+  "generatedAt": null,
+  "dataset": {
+    "name": "CredData candidates (direct adapter)",
+    "upstream": "https://github.com/Samsung/CredData",
+    "repositoryLicense": "Apache-2.0 per local research; current checkout not reverified",
+    "sourceFileLicenses": "Original project licences; no source content copied",
+    "upstreamSchemaVerified": false
+  },
+  "schema": {
+    "kind": "normalized-csv-v1",
+    "columns": ["candidate_id", "repository_id", "file_path", "line", "label"],
+    "nativeSchemaClaim": false
+  },
+  "reconciliation": null,
+  "sampling": {
+    "seed": 26024,
+    "devFraction": 0.5,
+    "heldoutCap": 5000,
+    "unit": "labelled-metadata-line",
+    "labelStratified": false,
+    "sameCandidatesForSensitivity": true
+  },
+  "sources": [],
+  "counts": null,
+  "labelPolicies": {
+    "primary": {"T": true, "F": false, "X": false},
+    "xAsReal": {"T": true, "F": false, "X": true}
+  },
+  "selected": [],
+  "limitations": [
+    "Builder source only: no dataset metadata or source files have been read and no sampling or evaluation has run.",
+    "The normalized CSV contract is not a verified native CredData schema; owner label-rule reconciliation is pending.",
+    "The held-out cap and split fraction are proposed configuration, not observed counts or prevalence.",
+    "No source paths, credential values or file contents belong in this manifest."
+  ]
+}

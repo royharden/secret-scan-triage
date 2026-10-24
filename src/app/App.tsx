@@ -4,7 +4,7 @@ import { Queue } from './routes/Queue.tsx';
 import { Setup } from './routes/Setup.tsx';
 import { receiveItems, readQueueItem } from './session.ts';
 import type { HumanDecision, Session } from './session.ts';
-import { getProjectSalt } from '../lib/projectSalt.ts';
+import { getProjectSalt, exportProjectIdentity } from '../lib/projectSalt.ts';
 import type { Connection, LiveProvider } from './routes/Settings.tsx';
 import { OFFLINE_CONSENT, mayUseCloud, mayUseInference } from '../lib/consent.ts';
 import type { ConsentState } from '../lib/consent.ts';
@@ -280,6 +280,17 @@ export function App() {
     }
     finally { if (generation.current === run) setLiving(false); }
   }
+  async function downloadIdentity() {
+    const activeGuard = guard.current;
+    try {
+      const json = await exportProjectIdentity(activeGuard);
+      if (guard.current !== activeGuard) return;
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'secret-scan-private-identity.json'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice('Private identity backup prepared locally. It was not sent to the backend or a provider.');
+    } catch { setNotice('Identity backup was not prepared. Re-import first; the guard may refuse a colliding artifact.'); }
+  }
   async function uploadSummary() {
     const current = connectionRef.current;
     if (!session || !current?.userId) return;
@@ -297,7 +308,7 @@ export function App() {
       <div className="threshold-banner"><strong>Thresholds: {browserThresholds.source}</strong><span>Judge dismissal {browserThresholds.judge_dismiss_enabled ? 'enabled by dev artifact' : 'disabled'}. Provider/model provenance is shown on each scored row. Construction has not been run.</span></div>
       {notice && <div className="error-notice" role="alert">{notice}</div>}
       {exportCounts && <div className="session-notice" role="status">Download prepared: {exportCounts.exported} masked findings; {exportCounts.blocked} withheld for review.</div>}
-      {page === 'setup' ? <Setup onBack={() => setPage('review')} onConnection={onConnection} consent={consent} onConsent={changeConsent} provider={provider} onProvider={changeProvider} liveEnabled={liveEnabled} /> : page === 'results' ? <Results session={session} /> : <><Import busy={busy} onDemo={(format, variant) => void start({ kind: 'demo', format, variant })} onFile={(file, format, verificationEnabled, selectedFiles, radius) => void start({ kind: 'file', file, format, verificationEnabled, selectedFiles, radius })} onCancel={() => { stop(); setNotice('Import cancelled. Load a scan to start a new session.'); }} />{session ? <Queue key={session.runId} session={session} saving={saving || living} onLive={() => { void runLive(); }} liveEnabled={mayUseInference(consent, connection?.userId ?? null, guard.current.ready, liveEnabled)} onSaveSummary={() => { void uploadSummary(); }} canCloud={mayUseCloud(consent, connection?.userId ?? null, guard.current.ready) && session.scope?.ownerId === connection?.userId} checkNote={note => { try { serializeSafe(note, 'note', guard.current); return true; } catch { return false; } }} onDecision={decide} onExport={download} onClear={clear} /> : !busy && <section className="empty-state"><span aria-hidden="true" className="empty-symbol">[ * ]</span><h2>Your next review starts here.</h2><p>Load the demo or import a scanner report to see keep, review and suggested-dismissal bands.</p></section>}</>}
+      {page === 'setup' ? <Setup onBack={() => setPage('review')} onConnection={onConnection} consent={consent} onConsent={changeConsent} provider={provider} onProvider={changeProvider} liveEnabled={liveEnabled} guardReady={guard.current.ready} onExportIdentity={() => { void downloadIdentity(); }} /> : page === 'results' ? <Results session={session} /> : <><Import busy={busy} onDemo={(format, variant) => void start({ kind: 'demo', format, variant })} onFile={(file, format, verificationEnabled, selectedFiles, radius) => void start({ kind: 'file', file, format, verificationEnabled, selectedFiles, radius })} onCancel={() => { stop(); setNotice('Import cancelled. Load a scan to start a new session.'); }} />{session ? <Queue key={session.runId} session={session} saving={saving || living} onLive={() => { void runLive(); }} liveEnabled={mayUseInference(consent, connection?.userId ?? null, guard.current.ready, liveEnabled)} onSaveSummary={() => { void uploadSummary(); }} canCloud={mayUseCloud(consent, connection?.userId ?? null, guard.current.ready) && session.scope?.ownerId === connection?.userId} checkNote={note => { try { serializeSafe(note, 'note', guard.current); return true; } catch { return false; } }} onDecision={decide} onExport={download} onClear={clear} /> : !busy && <section className="empty-state"><span aria-hidden="true" className="empty-symbol">[ * ]</span><h2>Your next review starts here.</h2><p>Load the demo or import a scanner report to see keep, review and suggested-dismissal bands.</p></section>}</>}
     </main>
     <footer><span>Secret-scan triage / construction preview</span><span>Append-only local rulings · masked exports · results not yet measured</span></footer>
   </>;

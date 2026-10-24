@@ -6,6 +6,7 @@ import type { JudgeResult } from '../core/judge/contract.ts';
 import type { Decision } from '../core/policy/decide.ts';
 import type { LeakGuard } from '../core/safe.ts';
 import { serializeSafe } from '../core/safe.ts';
+import type { RunLiveAccounting } from '../lib/runAccounting.ts';
 
 export type HumanDecision = 'pending' | 'approved_dismissal' | 'real' | 'skipped';
 export interface QueueItem {
@@ -28,6 +29,10 @@ export interface Session {
   scope?: OwnerProject;
   cohort?: AuditCohort;
   events?: RulingEvent[];
+  thresholdsSource?: 'untuned-default' | 'dev-tuned';
+  liveAccounting?: RunLiveAccounting;
+  liveBudgetCap?: number;
+  liveUsage?: { rows: number; possiblyTruncated: boolean; estimatedUsd: number; actualUsd: number; heldUsd: number } | null;
 }
 
 function record(v: unknown): v is Record<string, unknown> {
@@ -65,8 +70,14 @@ export function readQueueItem(json: string, guard: LeakGuard): QueueItem {
     if (typeof signal.evidence.lineId !== 'string') throw new Error('');
   }
   if (v.judge !== null) {
-    if (!record(v.judge) || !finite(v.judge.p_real) || v.judge.p_real < 0 || v.judge.p_real > 1) throw new Error('');
+    if (!record(v.judge) || !['ok', 'failed', 'not_requested'].includes(String(v.judge.status))) throw new Error('');
+    if (v.judge.status === 'ok') { if (!finite(v.judge.p_real) || v.judge.p_real < 0 || v.judge.p_real > 1) throw new Error(''); }
+    else if (v.judge.p_real !== null) throw new Error('');
+    const usage = v.judge.usage;
+    if (!record(usage) || !['calls', 'inputTokens', 'outputTokens', 'usd'].every(key => finite(usage[key]) && Number(usage[key]) >= 0)) throw new Error('');
+    for (const flag of ['usage_unknown', 'usage_estimated']) if (v.judge[flag] !== undefined && typeof v.judge[flag] !== 'boolean') throw new Error('');
     for (const key of ['reason_code', 'status', 'provider', 'modelId']) if (typeof v.judge[key] !== 'string') throw new Error('');
+    if (v.judge.status !== 'ok') v.judge.p_real = Number.NaN;
   }
   return v as unknown as QueueItem;
 }

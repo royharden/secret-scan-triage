@@ -7,6 +7,10 @@ import type { NoteDraft } from '../keyboard.ts';
 interface Props {
   session: Session;
   saving: boolean;
+  onLive?: () => void;
+  liveEnabled?: boolean;
+  onSaveSummary?: () => void;
+  canCloud?: boolean;
   checkNote: (note: string) => boolean;
   onDecision: (position: number, decision: HumanDecision, note?: string) => Promise<void>;
   onExport: (format: 'json' | 'csv' | 'markdown' | 'ignore') => void;
@@ -40,7 +44,8 @@ function FindingCard({ item, onDecision, saving, noteFor, onNote }: { item: Queu
       {f.flags.contextMismatch && <p className="flag">Context mismatch: using the scanner match line.</p>}
       {f.flags.unmaskableContext && <p className="flag">A context line was withheld because it could not be safely masked.</p>}
       <ul className="decision-reasons">{item.decision.reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul>
-      <div className="judge-line">{item.judge ? <><span className="mini-label">Scripted mock judge</span><span>p_real {item.judge.p_real.toFixed(2)} · {item.judge.reason_code}</span></> : <span>Deterministic decision · judge not requested</span>}</div>
+      <div className="judge-line">{item.judge ? <><span className="mini-label">{item.judge.provider === 'mock' ? 'Scripted mock judge' : `${item.judge.provider} / ${item.judge.modelId}`}</span><span>{item.judge.status === 'ok' ? `p_real ${item.judge.p_real.toFixed(2)} · ${item.judge.reason_code}` : 'Judge unavailable or failed; review required'}</span>{item.judge.usage_unknown && <small>Returned usage unknown; server reservations may remain.</small>}{item.judge.usage_estimated && <small>Usage contains conservative estimates.</small>}</> : <span>Deterministic decision · judge not requested</span>}</div>
+      {item.judge?.model_text && <p className="field-hint">Model-authored: {item.judge.model_text}</p>}
       <details className="evidence">
         <summary>Context & signal evidence <span>({f.signals.length} signals)</span></summary>
         {f.maskedWindow.length > 0 ? <pre>{f.maskedWindow.map((line) => <span key={line.lineId}><b>{line.lineId}</b> {line.text}{'\n'}</span>)}</pre> : <p>Context unavailable or withheld.</p>}
@@ -68,7 +73,7 @@ function BandList({ band, items, selected, onDecision, saving, noteFor, onNote }
   </>;
 }
 
-export function Queue({ session, saving, checkNote, onDecision, onExport, onClear }: Props) {
+export function Queue({ session, saving, checkNote, onDecision, onExport, onClear, onLive, liveEnabled, onSaveSummary, canCloud }: Props) {
   const ordered = queueOrder(session);
   const [selected, setSelected] = useState(ordered[0]?.position ?? 0);
   const [notes, setNotes] = useState<Map<number, NoteDraft>>(() => new Map());
@@ -107,8 +112,9 @@ export function Queue({ session, saving, checkNote, onDecision, onExport, onClea
       if (action.decision) void submit(action.position, action.decision);
       else requestFocus(action.position);
     }}>
-      <div className="section-heading queue-heading"><div><span className="eyebrow">02 / Review the evidence</span><h2 id="queue-heading">Your triage queue</h2><p>{session.demo ? 'Synthetic demo' : 'Imported report'} · {session.format} · {session.candidates} findings · {decided} human decisions</p></div><div className="queue-tools"><button className="primary" onClick={() => onExport('json')}>JSON ↓</button><button onClick={() => onExport('csv')}>CSV</button><button onClick={() => onExport('markdown')}>Markdown</button><button onClick={() => onExport('ignore')}>Ignore proposal</button><button className="text-button" onClick={onClear}>Clear session</button></div></div>
-      <div className="session-notice" role="status">Worker terminated after parsing; raw references released. Memory disposal has not been measured. Saved decisions replay only when finding id, masked content and keyed value tag all match. Re-import after reload to restore the guard.</div>
+      <div className="section-heading queue-heading"><div><span className="eyebrow">02 / Review the evidence</span><h2 id="queue-heading">Your triage queue</h2><p>{session.demo ? 'Synthetic demo' : 'Imported report'} · {session.format} · {session.candidates} findings · {decided} human decisions</p></div><div className="queue-tools"><button disabled={!liveEnabled || saving} onClick={onLive}>Run live judge</button><button disabled={!canCloud || saving} onClick={onSaveSummary}>Save cloud summary</button><button className="primary" onClick={() => onExport('json')}>JSON ↓</button><button onClick={() => onExport('csv')}>CSV</button><button onClick={() => onExport('markdown')}>Markdown</button><button onClick={() => onExport('ignore')}>Ignore proposal</button><button className="text-button" onClick={onClear}>Clear session</button></div></div>
+      {session.liveBudgetCap !== undefined && <div className="session-notice"><strong>Server budget ceiling: USD {session.liveBudgetCap.toPrecision(6)}</strong>{session.liveUsage ? <p>Latest {session.liveUsage.rows} accounting rows{session.liveUsage.possiblyTruncated ? ' (possibly truncated; totals are partial)' : ''}: estimates USD {session.liveUsage.estimatedUsd.toPrecision(6)}, settled actual USD {session.liveUsage.actualUsd.toPrecision(6)}, held estimates USD {session.liveUsage.heldUsd.toPrecision(6)}. The server enforces complete budget/day totals.</p> : <p>Accounting could not be safely read; totals are N/A. Ambiguous calls may retain reservations.</p>}</div>}
+      <div className="session-notice" role="status">Worker terminated after parsing; raw references released. Memory disposal has not been measured. Cloud history requires explicit account storage consent; otherwise decisions stay local. Saved decisions replay only when finding id, masked content and keyed value tag all match. Re-import after reload to restore the guard.</div>
       {session.blocked > 0 && <div className="blocked-notice" role="status"><strong>{session.blocked} findings withheld for review.</strong> The guard blocked their material. They are excluded from the visible queue and export; review the original report locally. No dismissal was recorded for them.</div>}
       <p className="field-hint">Keyboard: J/K next/previous, R mark real, D approve dismissal, S skip. Changing a saved decision appends a new event. Notes are checked before saving.</p>
       <div className="band-counts" aria-label="Queue bands">

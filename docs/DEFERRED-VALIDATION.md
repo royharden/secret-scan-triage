@@ -1,5 +1,12 @@
 # Deferred validation
 
+M5 consolidated review repair adds unexecuted regressions for cloud-only opaque identity/replay/ignore export, duplicate/ambiguous
+reservation usage uncertainty (including semantic screening), and repeated-action actual run-cost accumulation with sticky null
+summary accounting. After Dirty Mode closes: `npx vitest run tests/rulings/supabase.test.ts tests/providers/adapters.test.ts tests/live/runAccounting.test.ts tests/live/browser.test.ts tests/function/copies.test.ts`.
+Browser follow-up must cover live consent revocation or an audit/guard failure after dispatch, repeated successful calls, all-null
+responses and a fresh import, then inspect the exact cloud summary source/cost/counts. No runtime/accounting/privacy acceptance
+is claimed by the static parser, copy hashes or these written tests.
+
 M4 review repair adds unexecuted regression source for exact freeze identity, live dev-threshold lineage, charged safety/cache
 failures, unknown accounting, comparator boundaries and rendered judge/config provenance. After Dirty Mode closes, run
 `npx vitest run tests/evalkit/study.test.ts tests/evalkit/runnerCache.test.ts tests/evalkit/report.test.ts`; inspect a permitted live
@@ -43,3 +50,5 @@ parsing is not evidence these assertions pass. D3/D10/D20 remain deferred; after
 | D23 | M3 journey/rulings/audit/exports | IndexedDB transaction completion/quota, persistent cohorts, binding replay/reversal, focus and browser downloads unexecuted | Dirty Mode source only | After D2: `npx vitest run tests/rulings tests/audit tests/exports tests/app/journey.test.ts`; browser: approve/real/skip with notes and J/K/R/D/S, reload/reimport, run2 changes return to review, inspect IDB for sanitized events/cohorts but no guard/raw, export all four formats and verify ignore only approved/current/gitleaks; quota must report unsaved. Folder picker top-level/iframe fallback: select files then import, verify 1MB/50MB budgets and skipped notice. |
 
 | D24 | M4 scorer, statistics, lineage | Pure statistics/methods/cache/CLI/renderers are source only; no actual manifest/counts/threshold tuning/results produced | Dirty Mode prohibits execution | After D2: `npx vitest run tests/evalkit`; `npm run eval -- --freeze`; `npm run eval`; inspect rows/undefined cases/mock provenance and cache; after explicit keys/spend authorization: `npm run eval -- --live --tune`, once on frozen heldout; compare hand-computed Wilson/bootstrap fixtures and verify README/LIMITATIONS/results match one object. Repeats must be exploratory. |
+
+| D25 | M5 account/cloud/live/browser + Node factories | All auth/recovery, consent revocation, cloud-store parity, streamed providers, trusted model/price config, JWT/CORS, budget reuse/reserve/claim/settle, semantic screen, staged deployment and usage UI are source only | Dirty Mode forbids execution/provisioning/network | After D2: `npx vitest run tests/live tests/providers tests/function tests/rulings/supabase.test.ts`; real isolated DB users A/B/anon for grants/RLS/append-only/budget reuse/UTC rollover/duplicate claims; `deno check supabase/functions/triage-judge/index.ts` then authorized deploy/401/413/422/429/503 cases. Configure email confirmation/recovery Site URL and allowlist; run local->sign-in->separate cloud/live opt-ins->import->live judge->four exports; turn off/revoke midrequest, reload forces reimport. Default/off mode must make zero function/cloud calls. Inspect body/log/storage captures for raw known values. Verify prices/token upper bounds/live wire first. |

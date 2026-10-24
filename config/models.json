@@ -1,0 +1,18 @@
+{
+  "source": "activation-required-not-live-verified",
+  "liveEnabledByDefault": false,
+  "generative": {
+    "provider": null,
+    "modelId": null,
+    "price": null,
+    "note": "Choose and verify availability, structured-output contract and dated prices at activation (D16). Server uses environment settings only."
+  },
+  "typesafe": {
+    "provider": "typesafe",
+    "modelId": "jev-1.13.0",
+    "price": null,
+    "default": false,
+    "formulaVersion": "conservative-dev-fit-pending-v1",
+    "note": "Local guide fallback; live wire/prices unverified D16. Default cannot_tell; explicit verified server TYPESAFE_CALIBRATION_JSON enables dev-fit logistic composition and Choice confidence gating. No promotion claim."
+  }
+}

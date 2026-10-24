@@ -5,7 +5,7 @@ import type { RulingsStore } from '../../src/core/rulings/types.ts';
 import { LeakGuardError, NOT_READY_GUARD } from '../../src/core/safe.ts';
 import { bindingFor, draftFor, guardFor, scope } from './fixtures.ts';
 
-export function defineRulingsStoreContract(name: string, factory: () => RulingsStore | Promise<RulingsStore>): void {
+export function defineRulingsStoreContract(name: string, factory: () => RulingsStore | Promise<RulingsStore>, options: { rejectForeignOwner?: boolean } = {}): void {
   describe(`${name}: shared rulings semantics`, () => {
     let store: RulingsStore;
     beforeEach(async () => { store = await factory(); });
@@ -14,7 +14,8 @@ export function defineRulingsStoreContract(name: string, factory: () => RulingsS
       // what_bug_this_catches: overwriting approval history or replaying a different owner/project's ruling.
       const first = await store.append(draftFor(), guardFor());
       const reversed = await store.append(draftFor({ decision: 'real' }), guardFor());
-      await store.append(draftFor({ ownerId: 'other-owner' }), guardFor());
+      if (options.rejectForeignOwner) await expect(store.append(draftFor({ ownerId: 'other-owner' }), guardFor())).rejects.toMatchObject({ code: 'invalid_input' });
+      else await store.append(draftFor({ ownerId: 'other-owner' }), guardFor());
       await store.append(draftFor({ projectKey: 'other-project' }), guardFor());
       const events = await store.list(scope);
       expect(events).toHaveLength(2);

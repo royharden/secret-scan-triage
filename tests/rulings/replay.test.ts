@@ -31,4 +31,15 @@ describe('binding and latest-event replay', () => {
     expect(replayRuling(bindingFor('other-finding'), [current, old], scope).status).toBe('none');
     expect(replayRuling(bindingFor(), [eventFor({ ownerId: 'other-owner' })], scope).status).toBe('none');
   });
+  it('preserves PostgreSQL microseconds before event-ID tie-breaking, including equivalent timezone offsets', () => {
+    // what_bug_this_catches: Date.parse collapses distinct SQL timestamps into one millisecond and resurrects an older event.
+    const older = eventFor({ eventId: '99', createdAt: '2026-10-24T12:00:00.123001Z' });
+    const newer = eventFor({ eventId: '1', createdAt: '2026-10-24T12:00:00.123999Z', decision: 'real' });
+    expect(compareRulingEvents(newer, older)).toBeGreaterThan(0);
+    expect(latestRulings([newer, older], scope).get('finding-a')).toEqual(newer);
+    const sameInstant = { ...newer, eventId: '2', createdAt: '2026-10-24T07:00:00.123999-05:00' };
+    expect(compareRulingEvents(sameInstant, newer)).toBeGreaterThan(0);
+    const padded = { ...newer, createdAt: '2026-10-24T12:00:00.1239990Z' };
+    expect(compareRulingEvents(padded, newer)).toBe(0);
+  });
 });

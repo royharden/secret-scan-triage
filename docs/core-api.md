@@ -1,5 +1,27 @@
 # Core API seams (M1 provisional contract)
 
+## M5 cloud identity and live accounting boundary
+
+Before binding/replay in a cloud import, `mapCloudFindingIds` replaces each operational `Finding.id` with full HMAC-SHA256 using
+the existing client-only persisted project salt and JSON encoding of
+`["secret-scan-triage/cloud-finding-id/v1", ownerId, projectKey, originalOperationalId]`. This is cloud-session mapping only:
+offline/pipeline ids are unchanged, and the original `Finding.fingerprint` remains local for approved `.gitleaksignore` download.
+Binding, replay and cloud ruling drafts all use the same stable opaque cloud id. The salt and original-id mapping are never
+uploaded. Derived ids and resulting items are guard-checked; failure omits the item and increments blocked count, never falls back
+to a path-bearing id. A matching salt/scope/id replays the same opaque identity; content/value binding checks remain mandatory.
+
+`ChargedProviderError.usageUnknown` carries code-owned uncertainty when reserve/claim cannot establish a fresh dispatch, including
+same-key already-dispatching/settled work. There is no second fetch. Numeric zero placeholders with `usage_unknown: true` are not
+a zero-charge assertion or an additional copy of a prior charge. Judge retry and semantic-screen aggregation preserve that flag;
+durable usage rows remain authoritative. Existing conservative charged-attempt estimates retain `usage_estimated` separately.
+
+Browser `Session.liveAccounting` is per-import state independent of visible rows and whole-budget totals. Begin latches pending
+live work before awaiting; trusted returned actual cost accumulates across actions, estimates stay separate, and unknown/estimated/
+partial/caught/incomplete actions remain sticky-uncertain. Only fully completed, entirely known actual accounting can populate
+`triage_runs.cost_usd`; otherwise it is null. A possible live action keeps live source provenance even if every result is withheld
+or null. New imports reset the state. Later success cannot certify an earlier ambiguous action, and consent/guard/cohort failures
+after a possible dispatch leave uncertainty rather than a measured zero. Full server budget/day accounting remains authoritative.
+
 Integrator-owned. Producers and consumers build against these signatures concurrently; reconcile against as-built code at the end of
 each milestone. Types live in `src/core/finding.ts` and `src/core/safe.ts`. All relative imports use the `.ts` extension. `.ts` files
 use erasable-only TypeScript (no `enum`, `namespace`, parameter properties, decorators).

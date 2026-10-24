@@ -8,13 +8,22 @@ function decimalOrder(a: string, b: string): number {
   const bb = b.replace(/^0+(?=\d)/, '');
   return aa.length - bb.length || (aa < bb ? -1 : aa > bb ? 1 : 0);
 }
+function submillisecondOrder(a: string, b: string): number {
+  // Date.parse truncates PostgreSQL's microsecond digits. Offset conversion changes only whole seconds,
+  // so compare the remaining decimal fraction after equal epoch milliseconds (without float rounding).
+  const tail = (value: string): string => (/\.(\d+)(?:Z|[+-]\d{2}:\d{2})$/.exec(value)?.[1] ?? '').slice(3);
+  const aa = tail(a); const bb = tail(b);
+  const length = Math.max(aa.length, bb.length);
+  const left = aa.padEnd(length, '0'); const right = bb.padEnd(length, '0');
+  return left < right ? -1 : left > right ? 1 : 0;
+}
 /** Total deterministic ordering; local sequences take precedence over clocks within the offline store. */
 export function compareRulingEvents(a: RulingEvent, b: RulingEvent): number {
   if (a.localSeq !== undefined && b.localSeq !== undefined) return a.localSeq - b.localSeq;
   // Stores normally remain separate. A mixed list still has an explicit, transitive ordering.
   if (a.localSeq !== undefined || b.localSeq !== undefined) return a.localSeq !== undefined ? 1 : -1;
   const time = Date.parse(a.createdAt) - Date.parse(b.createdAt);
-  return time || decimalOrder(a.eventId, b.eventId);
+  return time || submillisecondOrder(a.createdAt, b.createdAt) || decimalOrder(a.eventId, b.eventId);
 }
 export function latestRulings(events: readonly RulingEvent[], scope: OwnerProject): Map<string, RulingEvent> {
   const latest = new Map<string, RulingEvent>();

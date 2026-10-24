@@ -16,7 +16,7 @@ import { validateSamples } from './split.ts';
 import type { EvaluationResult, MethodId, MethodResult, Observation, PairedComparison, RunEvaluationInput, Sample } from './types.ts';
 
 function descriptorFor(method: MethodId, input: RunEvaluationInput): DescribedJudge | undefined {
-  return method === 'jev' ? input.judges.jev : input.judges.generative;
+  return method === 'jev' ? input.judges.jev : method === 'llm-only' ? input.judges.llmOnly ?? input.judges.generative : input.judges.generative;
 }
 function validUsage(usage: unknown): usage is JudgeUsage {
   if (!usage || typeof usage !== 'object') return false;
@@ -79,7 +79,7 @@ async function observe(method: MethodId, sample: Sample, input: RunEvaluationInp
         }
       }
       // Copy only validated numeric fields BEFORE any response/cache guard can reject optional model material.
-      if (dispatched) base.attemptUsage = usageReceipt(result?.usage) ?? null;
+      if (dispatched) base.attemptUsage = result?.usage_unknown ? null : usageReceipt(result?.usage) ?? null;
       if (dispatched && base.attemptUsage === null) return { ...base, band: 'review' }; // Unknown receipt is never zero usage.
       if (!validResult(result, view, judge)) {
         result = failedResult(judge.descriptor.provider, judge.descriptor.modelId, 'invalid_output', usageReceipt(result?.usage) ?? ZERO_USAGE);

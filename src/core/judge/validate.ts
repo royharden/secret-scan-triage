@@ -8,6 +8,7 @@ import type { LeakGuard } from '../safe.ts';
 import { guardedSafeText } from '../mask/leakGuard.ts';
 import {
   MAX_MODEL_TEXT_CHARS,
+  ChargedProviderError,
   MAX_VIEW_BYTES,
   MODEL_TEXT_LABEL,
   ZERO_USAGE,
@@ -196,20 +197,36 @@ export async function judgeWithRetry(caller: RawJudgeCaller, view: MaskedView, g
   if (utf8Bytes(body) > MAX_VIEW_BYTES) return failedResult(caller.provider, caller.modelId, 'oversize_view');
 
   let usage: JudgeUsage = { ...ZERO_USAGE };
+  let estimated = false;
+  let unknown = false;
   for (const attempt of [1, 2] as const) {
-    let out: { output: unknown; usage: JudgeUsage };
+    let out: { output: unknown; usage: JudgeUsage; usage_estimated?: boolean };
     try {
       out = await caller.call({ view, body, attempt });
-    } catch {
-      return failedResult(caller.provider, caller.modelId, 'provider_error', usage);
+    } catch (error) {
+      if (error instanceof ChargedProviderError) {
+        usage = addUsage(usage, error.chargedUsage);
+        estimated ||= error.usageEstimated;
+        unknown ||= error.usageUnknown;
+      }
+      const failed = failedResult(caller.provider, caller.modelId, 'provider_error', usage);
+      if (estimated) failed.usage_estimated = true;
+      if (unknown) failed.usage_unknown = true;
+      return failed;
     }
     usage = addUsage(usage, out.usage);
+    estimated ||= out.usage_estimated === true;
     const v = validateJudgeOutput(out.output, view, { citationsRequired: caller.citationsRequired }, guard, {
       provider: caller.provider,
       modelId: caller.modelId,
       usage,
     });
-    if (!isInvalid(v)) return v;
+    if (!isInvalid(v)) {
+      if (estimated) v.usage_estimated = true;
+      return v;
+    }
   }
-  return failedResult(caller.provider, caller.modelId, 'invalid_output', usage);
+  const failed = failedResult(caller.provider, caller.modelId, 'invalid_output', usage);
+  if (estimated) failed.usage_estimated = true;
+  return failed;
 }

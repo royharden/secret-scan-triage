@@ -1,0 +1,4 @@
+project_id = "secret-scan-triage"
+
+[functions.triage-judge]
+verify_jwt = true

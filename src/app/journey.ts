@@ -6,10 +6,27 @@ import { bindFinding, sameBinding } from '../core/rulings/binding.ts';
 import { latestRulings, replayRuling } from '../core/rulings/replay.ts';
 import type { OwnerProject, RulingDraft, RulingEvent } from '../core/rulings/types.ts';
 import { createAuditCohort } from '../core/audit/sampler.ts';
+import { hmacHex } from '../core/identity.ts';
 
 export const LOCAL_SCOPE: OwnerProject = Object.freeze({ ownerId: 'offline', projectKey: 'local-default' });
 export function humanDecision(event: RulingEvent): HumanDecision {
   return event.decision === 'dismiss_approved' ? 'approved_dismissal' : event.decision === 'real' ? 'real' : 'skipped';
+}
+/** Cloud-only identity boundary, before binding/replay. Original fingerprints remain client-side for ignore download. */
+export async function mapCloudFindingIds(session: Session, scope: OwnerProject, projectSalt: Uint8Array, guard: LeakGuard): Promise<Session> {
+  if (scope.ownerId === LOCAL_SCOPE.ownerId) return session;
+  const items: QueueItem[] = [];
+  let blocked = session.blocked;
+  for (const item of session.items) {
+    try {
+      const id = await hmacHex(projectSalt, JSON.stringify(['secret-scan-triage/cloud-finding-id/v1',
+        scope.ownerId, scope.projectKey, item.finding.id]));
+      guard.check(id, 'ui_state'); // Derived hashes have no exemption from the strict known-value rule.
+      const mapped = { ...item, finding: { ...item.finding, id } };
+      items.push(readQueueItem(serializeSafe(mapped, 'ui_state', guard), guard));
+    } catch { blocked++; } // No fallback to a path-bearing operational id; omitted items cannot produce cloud drafts.
+  }
+  return { ...session, items, blocked };
 }
 /** Restored events are untrusted until checked against this fresh import's session guard. */
 export async function prepareJourney(session: Session, events: readonly RulingEvent[], scope: OwnerProject, guard: LeakGuard): Promise<Session> {

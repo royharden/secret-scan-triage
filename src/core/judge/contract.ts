@@ -61,6 +61,10 @@ export interface JudgeResult {
   /** Validated line ids inside the supplied window. Undefined = "not provided" (allowed for Jev only). */
   cited_lines?: string[];
   usage: JudgeUsage;
+  /** A timeout, transport failure or untrusted usage retained the reserved maximum cost, not measured actual usage. */
+  usage_estimated?: boolean;
+  /** No trusted usage reply was received. Numeric placeholders do not assert a zero charge. */
+  usage_unknown?: boolean;
   status: JudgeStatus;
   /** Optional free text: escaped, <= 200 chars, re-checked by the leak guard. Always display with model_text_label. */
   model_text?: SafeText;
@@ -92,7 +96,22 @@ export interface RawJudgeCaller {
   /** Generative adapters must cite window line ids; Jev (typesafe) citations are optional. */
   citationsRequired: boolean;
   /** Returns unparsed model output (string or object) plus usage for this attempt. Throws on provider error. */
-  call(req: RawJudgeRequest): Promise<{ output: unknown; usage: JudgeUsage }>;
+  call(req: RawJudgeRequest): Promise<{ output: unknown; usage: JudgeUsage; usage_estimated?: boolean }>;
+}
+
+/** Code-owned error only: empty public text and no provider payload/cause. Never trust a duck-typed error. */
+export class ChargedProviderError extends Error {
+  readonly chargedUsage: JudgeUsage;
+  readonly usageEstimated: boolean;
+  readonly usageUnknown: boolean;
+  constructor(usage: JudgeUsage, estimated = true, unknown = false) {
+    super('');
+    this.name = 'ChargedProviderError';
+    this.chargedUsage = { ...usage };
+    this.usageEstimated = estimated;
+    this.usageUnknown = unknown;
+  }
+  override toString(): string { return ''; }
 }
 
 export const ZERO_USAGE: JudgeUsage = Object.freeze({ calls: 0, inputTokens: 0, outputTokens: 0, usd: 0 });

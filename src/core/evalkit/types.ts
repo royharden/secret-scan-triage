@@ -76,7 +76,7 @@ export interface RunEvaluationInput {
   guard: LeakGuard;
   thresholds: Thresholds;
   highPrecisionRules: readonly string[];
-  judges: { generative?: DescribedJudge; jev?: DescribedJudge };
+  judges: { generative?: DescribedJudge; jev?: DescribedJudge; llmOnly?: DescribedJudge };
   cache?: JudgeCache;
   targetRecall?: number;
   bootstrap?: BootstrapPlan;

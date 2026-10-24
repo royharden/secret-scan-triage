@@ -1,0 +1,27 @@
+{
+  "version": "hp-v1",
+  "note": "Rule ids (gitleaks rule ids and trufflehog detector names, compared case-insensitively) whose matches are high precision. A finding under one of these rules is never dismissed by the judge alone; stage 1 needs the S-F1 sentinel exception or it goes to review. Trufflehog detector names are from documentation, unverified against a real sample (D1).",
+  "rules": [
+    "aws-access-token",
+    "github-pat",
+    "github-fine-grained-pat",
+    "github-oauth",
+    "github-app-token",
+    "slack-bot-token",
+    "slack-user-token",
+    "stripe-access-token",
+    "gitlab-pat",
+    "anthropic-api-key",
+    "gcp-api-key",
+    "npm-access-token",
+    "private-key",
+    "AWS",
+    "Github",
+    "Slack",
+    "Stripe",
+    "Gitlab",
+    "Anthropic",
+    "NpmToken",
+    "PrivateKey"
+  ]
+}

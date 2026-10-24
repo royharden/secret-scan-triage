@@ -1,0 +1,72 @@
+{
+  "version": "signals-v1",
+  "source": "untuned-default",
+  "note": "Signal table must equal CANONICAL_SIGNALS in src/core/signals/index.ts (loader rejects drift). Thresholds are untuned defaults, not measurements. Sentinel values are stored split into parts and joined only at load, so no complete key-shaped literal appears in source. Provider formats (S-R3) live only in config/prefixes.json.",
+  "signals": [
+    { "id": "S-R1", "name": "trufflehog_verified", "direction": "real", "strength": "decisive" },
+    { "id": "S-R2", "name": "full_pem_body", "direction": "real", "strength": "strong" },
+    { "id": "S-R3", "name": "provider_format_exact", "direction": "real", "strength": "strong" },
+    { "id": "S-R4", "name": "high_precision_rule", "direction": "real", "strength": "strong" },
+    { "id": "S-R5", "name": "keyword_assignment_high_entropy", "direction": "real", "strength": "strong" },
+    { "id": "S-F1", "name": "documented_sentinel", "direction": "fp", "strength": "decisive" },
+    { "id": "S-F2", "name": "reference_not_literal", "direction": "fp", "strength": "decisive" },
+    { "id": "S-F3", "name": "lockfile_integrity", "direction": "fp", "strength": "decisive" },
+    { "id": "S-F4", "name": "pem_elided", "direction": "fp", "strength": "decisive" },
+    { "id": "S-F5", "name": "placeholder_word", "direction": "fp", "strength": "strong" },
+    { "id": "S-F6", "name": "uuid_or_commit_shape", "direction": "fp", "strength": "strong" },
+    { "id": "S-F7", "name": "data_uri", "direction": "fp", "strength": "strong" },
+    { "id": "S-F8", "name": "self_named", "direction": "fp", "strength": "strong" },
+    { "id": "S-F9", "name": "low_entropy_for_class", "direction": "fp", "strength": "weak" },
+    { "id": "S-F10", "name": "identifier_shape", "direction": "fp", "strength": "weak" },
+    { "id": "S-F11", "name": "path_test_fixture_docs", "direction": "fp", "strength": "weak", "downgradeOnly": true }
+  ],
+  "entropy_thresholds": {
+    "hex": 3.0,
+    "base64": 4.0,
+    "base64url": 4.0,
+    "alnum": 3.5,
+    "digits": 2.5,
+    "mixed": 3.5,
+    "pem": 4.0
+  },
+  "entropy_length_factor": 0.85,
+  "credential_keywords": [
+    "password", "passwd", "pwd", "secret", "token", "apikey", "api_key", "api-key", "access_key", "accesskey",
+    "auth", "credential", "private_key", "privatekey", "client_secret"
+  ],
+  "placeholder_words": [
+    "changeme", "change_me", "change-me", "your_api_key", "your-api-key", "yourapikey", "your_token", "your_secret",
+    "<token>", "example", "dummy", "redacted", "placeholder", "replace_me", "replaceme", "insert_key", "notreal",
+    "not_a_real", "fake", "sample", "foobar", "lorem"
+  ],
+  "placeholder_patterns": [
+    "x{4,}",
+    "\\*{4,}",
+    "^<[^>]*>$",
+    "\\.{3,}",
+    "^(.)\\1{5,}$",
+    "12345678"
+  ],
+  "identifier_words": [
+    "get", "set", "user", "name", "pass", "password", "token", "key", "secret", "api", "auth", "value", "config",
+    "default", "client", "id", "access", "private", "public", "app", "env", "test", "dev", "prod", "local", "db",
+    "database", "host", "port", "url", "path", "file", "data", "type", "string", "true", "false", "null", "none",
+    "my", "new", "old", "admin", "root", "service", "account", "session", "cookie", "header", "bearer", "oauth",
+    "login", "email", "hello", "world", "foo", "bar", "baz", "qux", "temp", "tmp", "demo", "sample"
+  ],
+  "sentinels": [
+    { "id": "aws-docs-access-key-id-1", "source": "AWS documentation example access key id", "parts": ["AKIA", "IOSFODNN7", "EXAMPLE"] },
+    { "id": "aws-docs-secret-key-1", "source": "AWS documentation example secret access key", "parts": ["wJalrXUtnFEMI", "/K7MDENG/", "bPxRfiCY", "EXAMPLEKEY"] },
+    { "id": "aws-docs-access-key-id-2", "source": "AWS documentation example access key id", "parts": ["AKIA", "I44QH8DHB", "EXAMPLE"] },
+    { "id": "aws-docs-secret-key-2", "source": "AWS documentation example secret access key", "parts": ["je7MtGbClwBF", "/2Zp9Utk/", "h3yCo8nvb", "EXAMPLEKEY"] },
+    { "id": "stripe-docs-test-key", "source": "Stripe documentation sample test-mode key", "parts": ["sk_", "test_", "4eC39HqLyjWD", "arjtT1zdp7dc"] }
+  ],
+  "pem": {
+    "min_body_chars": 64,
+    "elision_markers": ["...", "…", "<", ">", "*", "[", "redacted", "truncated", "elided", "omitted"]
+  },
+  "lockfile_basenames": [
+    "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "bun.lock", "go.sum", "cargo.lock",
+    "poetry.lock", "pipfile.lock", "composer.lock", "gemfile.lock"
+  ]
+}

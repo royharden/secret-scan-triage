@@ -1,0 +1,19 @@
+# secrets and local env
+.env*
+!.env.example
+
+# dependencies and builds
+node_modules/
+dist/
+*.tsbuildinfo
+
+# generated, never committed
+fixtures/generated/
+results/raw/
+creddata/
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

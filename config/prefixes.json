@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "note": "Fixed provider prefix list. A prefix is kept visible in a mask only if listed here and only at the start of the value. length/minLength/maxLength are whole-value lengths including the prefix; charset is a RegExp character-class body every character after the prefix must match. This file is the ONE source of provider formats: masking (kept prefixes) and S-R3 provider_format_exact (matchProviderFormat) both read it. Shapes are from public provider documentation and are unverified against live tokens.",
+  "prefixes": [
+    { "prefix": "AKIA", "provider": "aws-access-key-id", "length": 20, "charset": "A-Z0-9" },
+    { "prefix": "ASIA", "provider": "aws-temporary-access-key-id", "length": 20, "charset": "A-Z0-9" },
+    { "prefix": "ABIA", "provider": "aws-sts-service-bearer-key-id", "length": 20, "charset": "A-Z0-9" },
+    { "prefix": "ACCA", "provider": "aws-context-specific-key-id", "length": 20, "charset": "A-Z0-9" },
+    { "prefix": "ghp_", "provider": "github-classic-pat", "length": 40, "charset": "A-Za-z0-9" },
+    { "prefix": "gho_", "provider": "github-oauth", "length": 40, "charset": "A-Za-z0-9" },
+    { "prefix": "ghu_", "provider": "github-user-to-server", "length": 40, "charset": "A-Za-z0-9" },
+    { "prefix": "ghs_", "provider": "github-server-to-server", "length": 40, "charset": "A-Za-z0-9" },
+    { "prefix": "ghr_", "provider": "github-refresh", "length": 40, "charset": "A-Za-z0-9" },
+    { "prefix": "github_pat_", "provider": "github-fine-grained-pat", "minLength": 82, "maxLength": 100, "charset": "A-Za-z0-9_" },
+    { "prefix": "xoxb-", "provider": "slack-bot", "minLength": 30, "maxLength": 120, "charset": "A-Za-z0-9-" },
+    { "prefix": "xoxp-", "provider": "slack-user", "minLength": 30, "maxLength": 120, "charset": "A-Za-z0-9-" },
+    { "prefix": "sk_live_", "provider": "stripe-live-secret", "minLength": 32, "maxLength": 140, "charset": "A-Za-z0-9" },
+    { "prefix": "rk_live_", "provider": "stripe-live-restricted", "minLength": 32, "maxLength": 140, "charset": "A-Za-z0-9" },
+    { "prefix": "sk-ant-api03-", "provider": "anthropic-api-key", "minLength": 100, "maxLength": 120, "charset": "A-Za-z0-9_-" },
+    { "prefix": "sk-ant-admin01-", "provider": "anthropic-admin-key", "minLength": 100, "maxLength": 120, "charset": "A-Za-z0-9_-" },
+    { "prefix": "glpat-", "provider": "gitlab-pat", "minLength": 26, "maxLength": 64, "charset": "A-Za-z0-9_.-" },
+    { "prefix": "AIza", "provider": "google-api-key", "length": 39, "charset": "A-Za-z0-9_-" },
+    { "prefix": "npm_", "provider": "npm-access-token", "length": 40, "charset": "A-Za-z0-9" }
+  ]
+}

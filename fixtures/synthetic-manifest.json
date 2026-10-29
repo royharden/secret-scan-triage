@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "synth-v1",
+  "seed": 26024,
+  "frozenAt": null,
+  "counts": null,
+  "status": "not-generated",
+  "note": "Construction placeholder; no generator or scorer has run. Freeze a generated manifest before tuning and held-out evaluation."
+}

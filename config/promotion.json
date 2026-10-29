@@ -1,0 +1,8 @@
+{
+  "target_recall": 0.98,
+  "equivalence_enabled": false,
+  "margin": null,
+  "frozenAt": null,
+  "default": "generative",
+  "status": "not-evaluated"
+}

@@ -1,0 +1,7 @@
+{
+  "eval_usd": 10,
+  "session_usd": 1,
+  "daily_user_usd": null,
+  "daily_global_usd": null,
+  "note": "Ceilings are not spending authorization. Missing server daily limits disable live inference."
+}

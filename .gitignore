@@ -17,3 +17,10 @@ creddata/
 Thumbs.db
 .vscode/
 .idea/
+
+# private evaluator identity and preserved generated revisions
+.eval-local/
+*.bak-*
+
+# local credentials
+.creds/

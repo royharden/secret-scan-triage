@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "source": "scripted-mock",
+  "entries": [],
+  "note": "Empty construction placeholder. Entries are created only by an actual later local run; no live responses exist."
+}
